@@ -1,0 +1,4 @@
+"chr"	"start"	"end"	"width"	"strand"	"annotation"	"geneCh"	"geneStart"	"geneEnd"	"geneLen"	"geneStr"	"geneID"	"distanceToTSS"	"MACSqValue"	"SRX_ID"	"TF"	"cell_type"
+"chr2"	1743752	1744389	638	"*"	"Promoter (<=1kb)"	2	1631887	1744852	112966	2	7837	463	314	"SRX5527609"	"EP300"	"HAEC"
+"chr2"	1743772	1744417	646	"*"	"Promoter (<=1kb)"	2	1631887	1744852	112966	2	7837	435	310	"SRX5527615"	"EP300"	"HUVEC"
+"chr2"	1744367	1744735	369	"*"	"Promoter (<=1kb)"	2	1631887	1744852	112966	2	7837	117	774	"SRX5904135"	"TCF21"	"HCASMC"

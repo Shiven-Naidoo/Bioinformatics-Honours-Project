@@ -1,0 +1,162 @@
+##### Data Visualisation
+## Install Bioconductor core packages and Load CHIPseeker packages
+
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+BiocManager::install(version = "3.13")
+BiocManager::install("ChIPpeakAnno")
+BiocManager::install("clusterProfiler")
+BiocManager::install("ChIPseeker", force = TRUE)
+BiocManager::install("ReactomePA", force = TRUE)
+BiocManager::install("TxDb.Hsapiens.UCSC.hg38.knownGene")
+
+## Load libraries
+
+library(ChIPseeker)
+library(ChIPpeakAnno)
+library(TxDb.Hsapiens.UCSC.hg38.knownGene)
+
+## txdb contains database generated genomic annotation data from the UCSC
+## split into 2 objects specific to chromosomes 2 and 8
+
+txdb = TxDb.Hsapiens.UCSC.hg38.knownGene
+
+library(clusterProfiler)
+
+## Load in data
+
+setwd("C:/Users/Shiven/Documents/R/Honours Project/Data/BED Files")
+
+PXDNTFs = read.table("TFsPXDN.bed", header = FALSE, quote = "", sep = " ", comment.char = "")
+PXDNLTFs = read.table("TFsPXDNL.bed", header = FALSE, quote = "", sep = " ", comment.char = "")
+
+PXDNTFs
+PXDNLTFs
+
+## Isolate columns for chrom, start, end to make a peak file
+
+peakPXDNTFs = PXDNTFs %>% select(1:3)
+peakPXDNLTFs = PXDNLTFs %>% select(1:3)
+
+## Write peak into new bed file
+## make sure separators are "\t", and file ends with an emptyline
+
+write.table(peakPXDNTFs, "peakPXDNTab.bed", sep = "\t", row.names = FALSE)
+write.table(peakPXDNLTFs, "peakPXDNLTab.bed", sep = "\t", row.names = FALSE)
+
+## Annotate Peak files in 5kb radius of TSS
+
+peakAnnoPXDN = annotatePeak("peakPXDNTab.bed", tssRegion=c(-5000, 5000), TxDb=txdb, level = "gene", verbose = FALSE)
+
+peakAnnoPXDNL = annotatePeak("peakPXDNLTab.bed", tssRegion=c(-5000, 5000), TxDb=txdb, level = "gene", verbose = FALSE)
+
+
+## Visualise Peak Data as pie
+
+plotAnnoPie(peakAnnoPXDN, col = blues9)
+plotAnnoPie(peakAnnoPXDNL, col = blues9)
+
+## Visualise Peak Data as bar
+
+plotAnnoBar(peakAnnoPXDN)
+plotAnnoBar(peakAnnoPXDNL)
+
+## Visualise data relative to TSS
+
+plotDistToTSS(peakAnnoPXDN, title="")
+
+plotDistToTSS(peakAnnoPXDNL, title = "")
+
+## Store annotation data
+
+PXDNanno = as.data.frame(peakAnnoPXDN@anno)
+
+PXDNLanno = as.data.frame(peakAnnoPXDNL@anno)
+
+write.table(PXDNanno, file="PXDNanno.txt", sep = "\t", row.names = FALSE)
+
+write.table(PXDNLanno, file="PXDNLanno.txt", sep = "\t", row.names = FALSE)
+
+## Load in annotated data
+
+PXDNanno <- read.table("PXDNanno.txt", sep = "\t")
+
+PXDNLanno <- read.table("PXDNLanno.txt", sep = "\t")
+
+## Attach annotation data to tf data
+
+library(tidyverse)
+
+## Load missing columns
+
+?read.table
+
+missingDataPXDN = read.table("TFsPXDN.bed", header = FALSE, quote = "", sep = " ", comment.char = "")
+missingDataPXDNL = read.table("TFsPXDNL.bed", header = FALSE, quote = "", sep = " ", comment.char = "")
+
+missingDataPXDN
+missingDataPXDNL
+
+Macs_SRX_TF_CellType = select(missingDataPXDN, -c(V1, V2, V3))
+Macs_SRX_TF_CellTypePXDNL = select(missingDataPXDNL, -c(V1, V2, V3))
+
+Macs_SRX_TF_CellType
+
+fullAnnoPXDN = cbind(PXDNanno, Macs_SRX_TF_CellType)
+fullAnnoPXDNL = cbind(PXDNLanno, Macs_SRX_TF_CellTypePXDNL)
+
+fullAnnoPXDN
+
+colnames(fullAnnoPXDN) = c("chr", "start", "end", "width", "strand", "annotation", "geneCh", "geneStart", "geneEnd", "geneLen", "geneStr", "geneID", "distanceToTSS", "MACSqValue", "SRX_ID", "TF", "cell_type")
+colnames(fullAnnoPXDNL) = c("chr", "start", "end", "width", "strand", "annotation", "geneCh", "geneStart", "geneEnd", "geneLen", "geneStr", "geneID", "distanceToTSS", "MACSqValue", "SRX_ID", "TF", "cell_type")
+
+write.table(fullAnnoPXDN, file="PXDNFullAnno.bed", sep = "\t", row.names = FALSE)
+write.table(fullAnnoPXDNL, file="PXDNLFullAnno.bed", sep = "\t", row.names = FALSE)
+
+## Test for .bed files
+
+peak = readPeakFile("Test2.bed")
+
+peak = readPeakFile("peakPXDNTab.bed")
+
+##### Data Filtering
+
+library(ChIPseeker)
+library(dplyr)
+
+## Load in annotated files
+
+FullAnnoPXDN = read.table("PXDNFullAnno.bed", header = TRUE, quote = "", sep = "\t", comment.char = "")
+FullAnnoPXDNL = read.table("PXDNLFullAnno.bed", header = TRUE, quote = "", sep = "\t", comment.char = "")
+
+## Filter annotated data within 5 kb of TSS (focus on promoter region and distal intergenic)
+
+filtAnnoPXDN = FullAnnoPXDN %>% filter(annotation == c("Promoter (1-2kb)", "Promoter (<=1kb)", "Distal Intergenic"))
+filtAnnoPXDNL = FullAnnoPXDN %>% filter(annotation == c("Promoter (4-5kb)", "Promoter (<=1kb)"))
+
+## Filter for high Macsq values
+
+filtMacsAnnoPXDN <- filtAnnoPXDN %>% filter(MACSqValue > 200)
+filtMacsAnnoPXDNL <- filtAnnoPXDNL %>% filter(MACSqValue > 200)
+
+## Write into files
+
+write.table(filtMacsAnnoPXDN, file="filtMacsAnnoPXDN.txt", sep = "\t", row.names = FALSE)
+write.table(filtMacsAnnoPXDNL, file="filtMacsAnnoPXDNL.txt", sep = "\t", row.names = FALSE)
+
+##### Graphs Plotting
+
+library(ggplot2)
+
+par(mfrow=c(4,1))
+
+filtMacsAnnoPXDN$n<-1
+TFPXDN = filtMacsAnnoPXDN %>% arrange(MACSqValue) %>% ggplot(aes(x = TF, n, fill = MACSqValue)) + geom_bar(stat = "identity") + scale_fill_continuous(low="blue", high="red")
+TFPXDN + theme(axis.text.x = element_text(angle = 90)) + ggtitle("Bar graph of the prevalence of transcription factors \nregulating PXDN in Cardiovascular Cells") + labs(y = "count", x = "Transcription Factors")
+
+filtMacsAnnoPXDNL$n<-1
+TFPXDNL = filtMacsAnnoPXDNL %>% arrange(MACSqValue) %>% ggplot(aes(x = TF, n, fill = MACSqValue)) + geom_bar(stat = "identity") + scale_fill_continuous(low="blue", high="red")
+TFPXDNL + theme(axis.text.x = element_text(angle = 90)) + ggtitle("Bar graph of the prevalence of transcription factors \nregulating PXDNL in Cardiovascular Cells") + labs(y = "count", x = "Transcription Factors")
+
+filtMacsAnnoPXDN
+
