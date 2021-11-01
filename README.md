@@ -1,0 +1,2 @@
+# Bioinformatics-Honours-Project
+PXDN (encoding the peroxidasin protein) has been shown to be dysregulated/mutated in a variety of diseases. Research into the regulation of the genes PXDN, and its homolog PXDNL, is lacking. This study aimed to use ChIPseq data mining to identify the regulatory TFs of both genes in cardiovascular cells. From these findings, the study will postulated the roles these genes may play in cardiovascular cells and how their dysregulation may be linked to cardiovascular disease pathogenesis.
